@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "63356146637",
+    "firebase_url": "https://ujianxthax-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "ujianxthax",
+    "storage_bucket": "ujianxthax.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63356146637:android:b552423c1502bf18e22a84",
+        "android_client_info": {
+          "package_name": "com.mirzadev.onecenter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgjWEViQK5Q19PkE0fC3yQMpfdBNnEi5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
