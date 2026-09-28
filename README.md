@@ -6,7 +6,7 @@ MirzaDev OneCenter ini aplikasi Android yang dibikin sama MirzaDev.
 - Dashboard utama
 - Info-info terbaru
 - Rilisan Aplikasi
-- Bocoran (wajib beli key, dm gw aj)
+- Private Area
 - Native libraries pake C++
 - Cek integritas aplikasi (biar aman dari tukang crack)
 - UI navigasi ala Frosted Glass / Liquid Glass
