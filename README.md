@@ -1,6 +1,6 @@
-# MirzaDev OneCenter
+# OneCenter
 
-MirzaDev OneCenter ini aplikasi Android yang dibikin sama MirzaDev. 
+OneCenter ini aplikasi Eksperimental
 
 ## Fitur
 - Dashboard utama
