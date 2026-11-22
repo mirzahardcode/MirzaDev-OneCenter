@@ -2,17 +2,27 @@ package com.mirzadev.onecenter
 
 /**
  * Single place where app-level configuration lives.
- *
- * The GitHub token is read from BuildConfig so it is no longer a literal in
- * source control. See NOTES.md for the Gradle snippet and for why this is
- * still only a stopgap.
  */
 object AppConfig {
 
-    val githubToken: String
-        get() = BuildConfig.GITHUB_TOKEN
+    /**
+     * Backend base URL for latest information and private documents endpoints.
+     * Configured via BuildConfig per build variant (Staging vs Production).
+     */
+    val BACKEND_BASE_URL: String
+        get() {
+            val url = try {
+                val field = BuildConfig::class.java.getField("BACKEND_BASE_URL")
+                field.get(null) as? String
+            } catch (_: Exception) {
+                null
+            }
+            if (url.isNullOrBlank()) {
+                throw IllegalStateException("Konfigurasi BACKEND_BASE_URL belum ditentukan pada build variant ini.")
+            }
+            return url
+        }
 
-    const val PRIVATE_REPO = "mirzahardcode/MirzaDevPrivateData"
     const val RELEASES_REPO = "mirzahardcode/cracking-exam-app"
 
     const val CACHE_TTL_MILLIS = 30 * 60 * 1000L

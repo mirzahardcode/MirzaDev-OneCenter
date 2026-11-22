@@ -31,15 +31,10 @@ android {
     defaultConfig {
         applicationId = "com.mirzadev.onecenter"
         minSdk = 26
-        targetSdk = 37
-        versionCode = 5
-        versionName = "1.5.8"
+        targetSdk = 35
+        versionCode = 10
+        versionName = "1.6.5R8"
 
-        buildConfigField(
-            "String",
-            "GITHUB_TOKEN",
-            "\"${project.findProperty("GITHUB_TOKEN") ?: ""}\""
-        )
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -51,6 +46,11 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField(
+                "String",
+                "BACKEND_BASE_URL",
+                "\"https://backend-admin-ha73nxhc8-one-center1.vercel.app\""
+            )
             val digestDebug = (project.findProperty("EXPECTED_SIGNING_DIGEST_DEBUG") as? String)?.trim('"') ?: ""
             buildConfigField(
                 "String",
@@ -71,6 +71,11 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
 
+            buildConfigField(
+                "String",
+                "BACKEND_BASE_URL",
+                "\"https://backend-admin-theta.vercel.app\""
+            )
             val digestRelease = (project.findProperty("EXPECTED_SIGNING_DIGEST_RELEASE") as? String)?.trim('"') ?: ""
             buildConfigField(
                 "String",
@@ -84,7 +89,7 @@ android {
                 "\"$libraryDigestsRelease\""
             )
             optimization {
-                enable = false
+                enable = true
             }
         }
     }

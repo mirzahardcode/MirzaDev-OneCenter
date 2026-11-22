@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,6 +47,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mirzadev.onecenter.data.PrivateDocument
 import com.mirzadev.onecenter.state.PrivateState
 import com.mirzadev.onecenter.ui.components.EmptyState
@@ -58,6 +62,7 @@ import com.mirzadev.onecenter.ui.components.ScreenHeader
 import com.mirzadev.onecenter.ui.components.SectionHeader
 import com.mirzadev.onecenter.ui.components.StatusDot
 import com.mirzadev.onecenter.ui.design.GlassTokens
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -68,6 +73,21 @@ fun PrivateScreen(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
+    val scope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner, state.isLoggedIn) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && state.isLoggedIn) {
+                state.checkSession(scope)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     if (state.isLoggedIn) {
         PrivateDocuments(state = state, contentPadding = contentPadding, modifier = modifier)
     } else {
@@ -218,7 +238,13 @@ private fun PrivateDocuments(
     }
 
     LaunchedEffect(state.isLoggedIn) {
-        state.loadDocuments(scope)
+        if (state.isLoggedIn) {
+            state.loadDocuments(scope)
+            while (state.isLoggedIn) {
+                delay(15000)
+                state.checkSession(scope)
+            }
+        }
     }
 
     LazyColumn(
@@ -229,7 +255,7 @@ private fun PrivateDocuments(
 
         item(key = "header") {
             ScreenHeader(
-                overline = "bocoran soal di update setiap jam 6-9 malam dari sebelum ujian",
+                overline = "bocoran soal di update setiap jam 6-9 malam sebelum ujian",
                 title = "Bocoran",
                 subtitle = "Soal Ujian"
             )
@@ -264,7 +290,7 @@ private fun PrivateDocuments(
                         )
                     }
                     TextButton(onClick = { state.lock() }) {
-                        Text("Kunci")
+                        Text("Log Out")
                     }
                 }
             }

@@ -46,6 +46,36 @@ class PrefsCache(
     companion object {
 
         const val KEY_GLASS_MODE = "glass_mode_v2"
+        const val BASE_KEY_PRIVATE_DOCS = "private_docs_v3_cache"
+
+        fun userCacheKey(baseKey: String, uid: String?): String {
+            return if (!uid.isNullOrBlank()) {
+                "${baseKey}_${uid}"
+            } else {
+                baseKey
+            }
+        }
+
+        fun forUser(
+            prefs: SharedPreferences,
+            baseKey: String,
+            uid: String?,
+            ttlMillis: Long = AppConfig.CACHE_TTL_MILLIS
+        ): PrefsCache {
+            return PrefsCache(
+                prefs = prefs,
+                key = userCacheKey(baseKey, uid),
+                ttlMillis = ttlMillis
+            )
+        }
+
+        fun clearUserPrivateCache(prefs: SharedPreferences, uid: String?) {
+            if (!uid.isNullOrBlank()) {
+                forUser(prefs, BASE_KEY_PRIVATE_DOCS, uid).clear()
+                forUser(prefs, "private_docs_cache", uid).clear()
+            }
+            PrefsCache(prefs, "private_docs_cache").clear()
+        }
 
         fun preferences(context: Context): SharedPreferences {
             return context.getSharedPreferences(

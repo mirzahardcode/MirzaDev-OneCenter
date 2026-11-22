@@ -1,12 +1,17 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
-#
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# OneCenter R8 Keep Rules
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve JNI native method signatures and native classes
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+-keep class com.mirzadev.onecenter.NativeAuth { *; }
+-keep class com.mirzadev.onecenter.NativeCore { *; }
+-keep class com.mirzadev.onecenter.NativeLogger { *; }
+-keep class com.mirzadev.onecenter.NativeSecurity { *; }
+
+# Preserve Gson data models
+-keepclassmembers class com.mirzadev.onecenter.data.LatestInformation { *; }
+-keepclassmembers class com.mirzadev.onecenter.data.GitHubApk { *; }
+-keepclassmembers class com.mirzadev.onecenter.data.PrivateDocument { *; }
+-keepclassmembers class com.mirzadev.onecenter.data.PrivateDocumentsResponse { *; }

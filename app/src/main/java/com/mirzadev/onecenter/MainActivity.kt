@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MirzaDevCenterTheme {
-                val appState = rememberAppState(token = AppConfig.githubToken)
+                val appState = rememberAppState()
 
                 // FLAG_SECURE tracks the private session root.
                 val view = LocalView.current

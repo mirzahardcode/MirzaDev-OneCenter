@@ -1,7 +1,5 @@
 package com.mirzadev.onecenter.data
 
-import android.util.Base64
-import com.google.gson.Gson
 import com.mirzadev.onecenter.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,11 +10,8 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
- * All GitHub access in one place.
- *
- * Previously every call allocated a fresh OkHttpClient (throwing away the
- * connection pool and thread pool each time) and the releases endpoint used a
- * raw HttpURLConnection. One lazily-created client now serves everything.
+ * Handles public GitHub Releases API fetches for APK downloads.
+ * Unauthenticated public GET requests are used since the releases repository is public.
  */
 object GitHubService {
 
@@ -28,73 +23,8 @@ object GitHubService {
             .build()
     }
 
-    private val gson = Gson()
-
     // ─────────────────────────────────────────────
-    // Contents API (private repo, base64 payloads)
-    // ─────────────────────────────────────────────
-
-    private suspend fun fetchContentFile(
-        repo: String,
-        path: String,
-        token: String
-    ): String = withContext(Dispatchers.IO) {
-
-        val request = Request.Builder()
-            .url("https://api.github.com/repos/$repo/contents/$path")
-            .header("Authorization", "Bearer $token")
-            .header("Accept", "application/vnd.github+json")
-            .build()
-
-        client.newCall(request).execute().use { response ->
-
-            if (!response.isSuccessful) {
-                throw GitHubException("GitHub HTTP ${response.code}: ${response.message}")
-            }
-
-            val body = response.body?.string()
-                ?: throw GitHubException("Response kosong.")
-
-            val encoded = gson.fromJson(body, Map::class.java)["content"]?.toString()
-                ?: throw GitHubException("Field content tidak ditemukan.")
-
-            val decoded = Base64.decode(
-                encoded.replace("\\s".toRegex(), ""),
-                Base64.DEFAULT
-            )
-
-            String(decoded, Charsets.UTF_8)
-        }
-    }
-
-    suspend fun fetchLatestInformation(token: String): LatestInformation {
-        val json = fetchContentFile(
-            repo = AppConfig.PRIVATE_REPO,
-            path = "latest-information.json",
-            token = token
-        )
-        // Parsing off the main thread too — Default, not IO.
-        return withContext(Dispatchers.Default) {
-            gson.fromJson(json, LatestInformation::class.java)
-                ?: throw GitHubException("Informasi tidak dapat dibaca.")
-        }
-    }
-
-    suspend fun fetchPrivateDocuments(token: String): List<PrivateDocument> {
-        val json = fetchContentFile(
-            repo = AppConfig.PRIVATE_REPO,
-            path = "private-docs.json",
-            token = token
-        )
-        return withContext(Dispatchers.Default) {
-            gson.fromJson(json, PrivateDocumentsResponse::class.java)
-                ?.documents
-                ?: throw GitHubException("Dokumen tidak dapat dibaca.")
-        }
-    }
-
-    // ─────────────────────────────────────────────
-    // Releases API (public)
+    // Releases API (public unauthenticated)
     // ─────────────────────────────────────────────
 
     suspend fun fetchApks(): List<GitHubApk> = withContext(Dispatchers.IO) {
@@ -105,6 +35,9 @@ object GitHubService {
             .build()
 
         val body = client.newCall(request).execute().use { response ->
+            if (response.code == 403 || response.code == 429) {
+                throw GitHubException("Batas kueri publik GitHub tercapai. Silakan coba lagi nanti.")
+            }
             if (!response.isSuccessful) {
                 throw GitHubException("GitHub HTTP ${response.code}: ${response.message}")
             }
@@ -131,8 +64,7 @@ object GitHubService {
                 apks += GitHubApk(
                     name = releaseName,
                     version = tag,
-                    // Locale.US so the decimal separator is stable regardless
-                    // of device locale.
+                    // Locale.US so the decimal separator is stable regardless of device locale.
                     size = String.format(Locale.US, "%.1f MB", sizeMb),
                     downloadUrl = asset.optString("browser_download_url")
                 )

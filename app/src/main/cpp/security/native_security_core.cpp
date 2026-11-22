@@ -3,26 +3,19 @@
 #include <cstddef>
 
 bool NativeSecurity::constantTimeEquals(const std::string& a, const std::string& b) {
-    // XOR-accumulate over the full length of both inputs so total
-    // execution time depends only on max(len(a), len(b)), never on where
-    // (or whether) the first mismatching byte occurs.
-    volatile unsigned char diff = 0;
-    diff |= static_cast<unsigned char>(a.length() ^ b.length());
+    const size_t lenA = a.length();
+    const size_t lenB = b.length();
 
-    const size_t minLen = std::min(a.length(), b.length());
+    // Accumulate length difference in diff byte.
+    // If lengths differ, diff will be non-zero (ensuring the result is false).
+    volatile unsigned char diff = static_cast<unsigned char>(lenA ^ lenB);
+
+    // Byte-by-byte comparison up to min(lenA, lenB).
+    // For fixed-size hash comparisons (e.g. SHA-256 digests), lenA == lenB,
+    // so this loop compares every byte without early returns or conditional branches.
+    const size_t minLen = (lenA < lenB) ? lenA : lenB;
     for (size_t i = 0; i < minLen; ++i) {
         diff |= static_cast<unsigned char>(a[i] ^ b[i]);
-    }
-
-    // Keep touching the longer buffer past minLen so a length mismatch
-    // doesn't shorten the loop in a way that could be distinguished from
-    // a length match by an observer timing only this loop.
-    const size_t maxLen = std::max(a.length(), b.length());
-    for (size_t i = minLen; i < maxLen; ++i) {
-        const unsigned char val = (i < a.length())
-            ? static_cast<unsigned char>(a[i])
-            : static_cast<unsigned char>(b[i]);
-        diff |= val;
     }
 
     return diff == 0;
