@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.util.lerp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class DampedDragAnimation(
@@ -51,9 +52,13 @@ class DampedDragAnimation(
     var isDragging by mutableStateOf(false)
         private set
 
+    private var animJob: Job? = null
+
     val modifier: Modifier
         get() = Modifier.inspectDragGestures(
             onDragStart = { _ ->
+                animJob?.cancel()
+                animJob = null
                 isDragging = true
                 animationScope.launch {
                     animatePress(1f)
@@ -81,11 +86,23 @@ class DampedDragAnimation(
 
     fun updateValue(newValue: Float) {
         targetValue = newValue.coerceIn(valueRange)
-        if (!isDragging) {
+        if (isDragging) {
+            animJob?.cancel()
+            animJob = null
+            value = targetValue
+        } else {
+            animJob?.cancel()
             animationScope.launch {
                 animateToTarget()
-            }
+            }.also { animJob = it }
         }
+    }
+
+    fun snapTo(newValue: Float) {
+        animJob?.cancel()
+        animJob = null
+        value = newValue.coerceIn(valueRange)
+        targetValue = value
     }
 
     private suspend fun animateToTarget() {

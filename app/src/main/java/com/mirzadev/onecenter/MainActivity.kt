@@ -1,6 +1,7 @@
 package com.mirzadev.onecenter
 
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,8 +22,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
@@ -42,7 +45,10 @@ import com.mirzadev.onecenter.ui.screens.HomeScreen
 import com.mirzadev.onecenter.ui.screens.PrivateScreen
 import com.mirzadev.onecenter.ui.screens.SettingsScreen
 import com.mirzadev.onecenter.ui.theme.MirzaDevCenterTheme
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 class MainActivity : ComponentActivity() {
 
@@ -109,6 +115,43 @@ fun MirzaDevCenter(
 
     val scope = rememberCoroutineScope()
 
+    // TODO remove: selectedIndex is a read of currentPage; log pager state changes.
+    LaunchedEffect(pagerState) {
+        var previousPage = pagerState.currentPage
+        snapshotFlow { pagerState.currentPage }
+            .distinctUntilChanged()
+            .collect { page ->
+                Log.d(
+                    "NavDbg",
+                    "selectedIndex changed old=$previousPage new=$page " +
+                        "source=pagerState.currentPage"
+                )
+                previousPage = page
+            }
+    }
+
+    // TODO remove: record all programmatic pager navigation entry points.
+    fun animateToPage(target: Int, caller: String) {
+        scope.launch {
+            val currentPage = pagerState.currentPage
+            // TODO remove
+            Log.d("NavDbg", "animateScrollToPage($target) mulai dari $currentPage caller=$caller")
+            try {
+                pagerState.animateScrollToPage(target)
+                // TODO remove
+                Log.d("NavDbg", "animateScrollToPage($target) selesai caller=$caller")
+            } catch (cancellationException: CancellationException) {
+                // TODO remove
+                Log.d(
+                    "NavDbg",
+                    "animateScrollToPage($target) DIBATALKAN pada position=" +
+                        "${pagerState.currentPage + pagerState.currentPageOffsetFraction} caller=$caller"
+                )
+                throw cancellationException
+            }
+        }
+    }
+
     // Single source of truth for screen layout metrics
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -126,7 +169,7 @@ fun MirzaDevCenter(
                 selectedIndex = pagerState.currentPage,
                 items = navItems,
                 onSelect = { index ->
-                    scope.launch { pagerState.animateScrollToPage(index) }
+                    animateToPage(index, "GlassNavigationBar.onSelect")
                 },
                 backdrop = backdrop,
                 position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
@@ -145,8 +188,8 @@ fun MirzaDevCenter(
                     state = appState.home,
                     apkCount = appState.apks.apks.size,
                     contentPadding = screenPadding,
-                    onApksClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-                    onPrivateClick = { scope.launch { pagerState.animateScrollToPage(2) } }
+                    onApksClick = { animateToPage(1, "HomeScreen.onApksClick") },
+                    onPrivateClick = { animateToPage(2, "HomeScreen.onPrivateClick") }
                 )
 
                 1 -> ApksScreen(

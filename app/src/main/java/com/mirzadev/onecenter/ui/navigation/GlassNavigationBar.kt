@@ -31,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -67,7 +66,16 @@ import com.mirzadev.onecenter.ui.design.LocalGlassMode
 import com.mirzadev.onecenter.ui.design.glassSurface
 import com.mirzadev.onecenter.ui.design.liquidBackdrop
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.roundToInt
+
+private data class NavDebugSnapshot(
+    val position: Float,
+    val pillValue: Float,
+    val targetValue: Float,
+    val lastIndex: Int,
+    val isDragging: Boolean
+)
 
 data class NavItem(
     val label: String,
@@ -122,11 +130,11 @@ fun GlassNavigationBar(
     Log.d("Pill", "GlassNavigationBar composed, glass=$useGlassPill stepPx=$stepPx")
 
     val animationScope = rememberCoroutineScope()
-    var isDragging by remember { mutableStateOf(false) }
     var dragTarget by remember { mutableFloatStateOf(selectedIndex.toFloat()) }
     val latestStepPx by rememberUpdatedState(stepPx)
     val latestPosition by rememberUpdatedState(position)
     val latestOnSelect by rememberUpdatedState(onSelect)
+    val latestSelectedIndex by rememberUpdatedState(selectedIndex)
 
     val pill = remember(animationScope, lastIndex) {
         DampedDragAnimation(
@@ -138,19 +146,32 @@ fun GlassNavigationBar(
             pressedScale = 1.08f,
             onDragStarted = {
                 dragTarget = targetValue
-                isDragging = true
+                // TODO remove
+                Log.d(
+                    "NavDbg",
+                    "onDragStarted dragTarget=$dragTarget " +
+                        "target=${dragTarget.roundToInt().coerceIn(0, lastIndex)}"
+                )
             },
             onDragStopped = {
-                isDragging = false
                 val target = dragTarget.roundToInt().coerceIn(0, lastIndex)
-                updateValue(target.toFloat())
-                latestOnSelect(target)
+                snapTo(target.toFloat())
+                // TODO remove
+                Log.d(
+                    "NavDbg",
+                    "onDragStopped dragTarget=$dragTarget target=$target"
+                )
+                if (target != latestSelectedIndex) latestOnSelect(target)
             },
             onDragCancel = {
-                isDragging = false
                 val target = dragTarget.roundToInt().coerceIn(0, lastIndex)
-                updateValue(target.toFloat())
-                latestOnSelect(target)
+                val pagerPosition = latestPosition()
+                snapTo(pagerPosition)
+                // TODO remove
+                Log.d(
+                    "NavDbg",
+                    "onDragCancel dragTarget=$dragTarget target=$target snap=$pagerPosition"
+                )
             },
             onDrag = { _, dragAmount ->
                 val step = latestStepPx
@@ -158,18 +179,44 @@ fun GlassNavigationBar(
                     dragTarget = (dragTarget + dragAmount.x / step)
                         .coerceIn(0f, lastIndex.toFloat())
                     updateValue(dragTarget)
+                    // TODO remove
+                    Log.d(
+                        "NavDbg",
+                        "onDrag dx=${dragAmount.x} value=$value targetValue=$targetValue"
+                    )
                     Log.d("Pill", "drag=${dragAmount.x} target=$dragTarget")
                 }
             }
         )
     }
 
-    // Sinkron dari pager hanya saat jari tidak memegang pill
+    // TODO remove: quantize animation values to 0.1 to keep diagnostic logs readable.
+    LaunchedEffect(pill, lastIndex) {
+        snapshotFlow {
+            NavDebugSnapshot(
+                position = (latestPosition() * 10f).roundToInt() / 10f,
+                pillValue = (pill.value * 10f).roundToInt() / 10f,
+                targetValue = (pill.targetValue * 10f).roundToInt() / 10f,
+                lastIndex = lastIndex,
+                isDragging = pill.isDragging
+            )
+        }
+            .distinctUntilChanged()
+            .collectLatest { state ->
+                Log.d(
+                    "NavDbg",
+                    "position=${state.position} pill.value=${state.pillValue} " +
+                        "pill.targetValue=${state.targetValue} lastIndex=${state.lastIndex} " +
+                        "pill.isDragging=${state.isDragging}"
+                )
+            }
+    }
+
+    // Pager owns its animation; the pill snaps to the pager's current position.
     LaunchedEffect(pill) {
-        snapshotFlow { latestPosition() }.collectLatest { p ->
-            if (!isDragging) {
-                val t = p.coerceIn(0f, lastIndex.toFloat())
-                if (pill.targetValue != t) pill.updateValue(t)
+        snapshotFlow { latestPosition() }.collect { p ->
+            if (!pill.isDragging) {
+                pill.snapTo(p.coerceIn(0f, lastIndex.toFloat()))
             }
         }
     }
@@ -197,7 +244,6 @@ fun GlassNavigationBar(
                     Log.d("Pill", "BAR got touch")
                 }
             }
-            .then(pill.modifier)
     ) {
         Box(
             modifier = Modifier
@@ -229,7 +275,11 @@ fun GlassNavigationBar(
                         NavBarTab(
                             item = item,
                             selected = activeIndex == index,
-                            onClick = { latestOnSelect(index) },
+                            onClick = {
+                                // TODO remove
+                                Log.d("NavDbg", "onSelect index=$index source=tabTap")
+                                latestOnSelect(index)
+                            },
                             modifier = Modifier.weight(1f)
                         )
                     }
