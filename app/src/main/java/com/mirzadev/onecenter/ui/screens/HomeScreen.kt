@@ -105,7 +105,7 @@ fun HomeScreen(
             ScreenHeader(
                 overline = today,
                 title = "$greeting, 👋",
-                subtitle = "Jangan Lupa Beribadah Mpruy😹.",
+                subtitle = "Jangan lupa feedback jika ada masalah",
             )
         }
 
@@ -383,7 +383,8 @@ private fun QuickAccessCard(
 
 private fun greetingForNow(): String =
     when (Calendar.getInstance()[Calendar.HOUR_OF_DAY]) {
-        in 0..10 -> "Selamat Pagi"
-        in 11..17 -> "Selamat Sore"
+        in 4..10 -> "Selamat Pagi"
+        in 11..14 -> "Selamat Siang"
+        in 15..17 -> "Selamat Sore"
         else -> "Selamat Malam"
     }

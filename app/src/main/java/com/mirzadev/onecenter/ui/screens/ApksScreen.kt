@@ -3,11 +3,14 @@ package com.mirzadev.onecenter.ui.screens
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.compose.AsyncImagePainter
 import androidx.compose.ui.layout.ContentScale
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -135,36 +138,61 @@ fun ApksScreen(
 }
 
 /**
- * cbtcloud gets its real artwork; everything else falls back to the generic
- * Android glyph inside the usual tinted badge. Same 40dp footprint either
- * way, so rows stay aligned regardless of which branch renders.
+ * Uses SubcomposeAsyncImage (Coil 2.6.0) to explicitly handle loading, error,
+ * and empty states by falling back to the Android glyph while preserving
+ * the 48dp bordered footprint.
  */
 @Composable
 private fun ApkIcon(
     apk: GitHubApk,
     modifier: Modifier = Modifier
 ) {
-    val logoUrl = apkLogoUrl(apk)
+    val boxModifier = modifier
+        .size(48.dp)
+        .clip(RoundedCornerShape(12.dp))
+        .border(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(12.dp)
+        )
 
-    if (logoUrl != null) {
-        AsyncImage(
-            model = logoUrl,
+    if (!apk.logoUrl.isNullOrBlank()) {
+        SubcomposeAsyncImage(
+            model = apk.logoUrl,
             contentDescription = apk.name,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(12.dp)
-                ),
+            modifier = boxModifier,
             contentScale = ContentScale.Fit
-        )
+        ) {
+            val state = painter.state
+            if (state is AsyncImagePainter.State.Error ||
+                state is AsyncImagePainter.State.Empty) {
+                Box(
+                    modifier = boxModifier,
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Android,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+        }
     } else {
-        Icon(
-            imageVector = Icons.Default.Android,
-            contentDescription = null
-        )
+        Box(
+            modifier = boxModifier,
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Android,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
@@ -215,29 +243,5 @@ private fun ApkCard(
                 )
             }
         }
-    }
-}
-
-private fun apkLogoUrl(apk: GitHubApk): String? {
-    return when (apk.version) {
-        "ExamBrowserCBT" ->
-            "https://raw.githubusercontent.com/mirzahardcode/cracking-exam-app/main/assets/cbtexambro.png"
-
-        "CloudCBT" ->
-            "https://raw.githubusercontent.com/mirzahardcode/cracking-exam-app/main/assets/cbtcloud.png"
-
-        "SemiofflineCBT" ->
-            "https://raw.githubusercontent.com/mirzahardcode/cracking-exam-app/main/assets/cbtsemioffline.png"
-
-        "OnlineCBT" ->
-            "https://raw.githubusercontent.com/mirzahardcode/cracking-exam-app/main/assets/cbtonline.png"
-
-        "ExamManTemanggung" ->
-            "https://raw.githubusercontent.com/mirzahardcode/cracking-exam-app/main/assets/mantemanggung.png"
-
-        "ExamSMan1Cigombong" ->
-            "https://raw.githubusercontent.com/mirzahardcode/cracking-exam-app/main/assets/smancigombong.png"
-
-        else -> null
     }
 }

@@ -21,7 +21,8 @@ data class GitHubApk(
     @field:SerializedName("name") val name: String = "",
     @field:SerializedName("version") val version: String = "",
     @field:SerializedName("size") val size: String = "",
-    @field:SerializedName("downloadUrl") val downloadUrl: String = ""
+    @field:SerializedName("downloadUrl") val downloadUrl: String = "",
+    @field:SerializedName("logoUrl") val logoUrl: String? = null
 )
 
 @Immutable

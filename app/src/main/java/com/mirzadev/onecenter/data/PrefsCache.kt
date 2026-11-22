@@ -3,6 +3,7 @@ package com.mirzadev.onecenter.data
 import android.content.Context
 import android.content.SharedPreferences
 import com.mirzadev.onecenter.AppConfig
+import com.mirzadev.onecenter.ui.design.BackgroundType
 import com.mirzadev.onecenter.ui.design.GlassMode
 
 /**
@@ -46,6 +47,7 @@ class PrefsCache(
     companion object {
 
         const val KEY_GLASS_MODE = "glass_mode_v2"
+        const val KEY_BACKGROUND_TYPE = "background_type_v1"
         const val BASE_KEY_PRIVATE_DOCS = "private_docs_v3_cache"
 
         fun userCacheKey(baseKey: String, uid: String?): String {
@@ -93,6 +95,18 @@ class PrefsCache(
             preferences(context)
                 .edit()
                 .putInt(KEY_GLASS_MODE, mode.ordinal)
+                .apply()
+        }
+
+        fun getBackgroundType(context: Context): BackgroundType {
+            val ordinal = preferences(context).getInt(KEY_BACKGROUND_TYPE, BackgroundType.Default.ordinal)
+            return BackgroundType.entries.getOrElse(ordinal) { BackgroundType.Default }
+        }
+
+        fun setBackgroundType(context: Context, type: BackgroundType) {
+            preferences(context)
+                .edit()
+                .putInt(KEY_BACKGROUND_TYPE, type.ordinal)
                 .apply()
         }
     }

@@ -20,6 +20,7 @@ import com.mirzadev.onecenter.data.OneCenterApi
 import com.mirzadev.onecenter.data.PrefsCache
 import com.mirzadev.onecenter.data.PrivateAuthException
 import com.mirzadev.onecenter.data.PrivateDocument
+import com.mirzadev.onecenter.ui.design.BackgroundType
 import com.mirzadev.onecenter.ui.design.GlassMode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -136,7 +137,7 @@ class ApksState(
             isLoading = true
             errorMessage = null
             try {
-                val result = GitHubService.fetchApks()
+                val result = GitHubService.fetchApks(forceRefresh)
                 apks = result
                 cache.writeJson(gson.toJson(result))
             } catch (e: Exception) {
@@ -526,9 +527,19 @@ class SettingsState(
     )
         private set
 
+    var backgroundType by mutableStateOf(
+        PrefsCache.getBackgroundType(context)
+    )
+        private set
+
     fun updateGlassMode(mode: GlassMode) {
         glassMode = mode
         PrefsCache.setGlassMode(context, mode)
+    }
+
+    fun updateBackgroundType(type: BackgroundType) {
+        backgroundType = type
+        PrefsCache.setBackgroundType(context, type)
     }
 }
 // ─────────────────────────────────────────────

@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.staticCompositionLocalOf
+import android.os.Build
 import com.mirzadev.onecenter.data.PrefsCache
 
 enum class GlassMode {
@@ -126,9 +127,15 @@ fun Modifier.glassSurface(
     val onSurface = MaterialTheme.colorScheme.onSurface
     val glassMode = LocalGlassMode.current
 
-    // Jika Frosted Glass ON, kita naikin opacity buat simulasi.
-    // Jika Liquid, kita balik ke opacity rendah karena blur native yang bekerja.
-    val baseAlpha = if (glassMode == GlassMode.FROSTED) 0.82f else surface.alpha
+    val hasBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+    // FROSTED = simulasi opaque. LIQUID = translucent karena blur nyata bekerja,
+    // kecuali HP tanpa blur: naikkan opacity supaya teks tetap terbaca.
+    val baseAlpha = when {
+        glassMode == GlassMode.FROSTED -> 0.82f
+        glassMode == GlassMode.LIQUID && !hasBlur -> 0.85f
+        else -> surface.alpha
+    }
     val finalSurface = surface.copy(alpha = baseAlpha)
 
     val highlightAlpha =

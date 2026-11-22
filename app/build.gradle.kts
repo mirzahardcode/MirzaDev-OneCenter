@@ -125,6 +125,6 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("androidx.compose.foundation:foundation")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
-    implementation("dev.chrisbanes.haze:haze:1.6.0")
+    implementation(libs.backdrop)
     implementation("io.coil-kt:coil-compose:2.6.0")
 }

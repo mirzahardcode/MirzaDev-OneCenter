@@ -38,7 +38,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.mirzadev.onecenter.NativeAuth
 import com.mirzadev.onecenter.NativeCore
-import com.mirzadev.onecenter.NativeLibraryVersions // <-- Import NativeLibraryVersions
+import com.mirzadev.onecenter.NativeLibraryVersions
 import com.mirzadev.onecenter.NativeSecurity
 import com.mirzadev.onecenter.SecurityInitState
 import com.mirzadev.onecenter.SignatureStatus
@@ -46,6 +46,7 @@ import com.mirzadev.onecenter.state.SettingsState
 import com.mirzadev.onecenter.state.deviceId
 import com.mirzadev.onecenter.ui.components.GlassCard
 import com.mirzadev.onecenter.ui.components.ScreenHeader
+import com.mirzadev.onecenter.ui.design.BackgroundType
 import com.mirzadev.onecenter.ui.design.GlassMode
 import com.mirzadev.onecenter.ui.design.GlassTokens
 
@@ -71,6 +72,37 @@ fun SettingsScreen(
             subtitle = "Kustomisasi visual"
         )
 
+        // Background Type
+        GlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = GlassTokens.ScreenGutter),
+            contentPadding = PaddingValues(GlassTokens.SpaceL)
+        ) {
+            Column {
+                Text(
+                    text = "Tipe Background",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(GlassTokens.SpaceXs))
+                Text(
+                    text = "Warna polos, atau gradien liquid yang bergerak pelan.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(Modifier.height(GlassTokens.SpaceL))
+
+                SegmentedSelector(
+                    options = BackgroundType.entries,
+                    selected = state.backgroundType,
+                    label = { it.label },
+                    onSelected = state::updateBackgroundType
+                )
+            }
+        }
+
         // Glass Surface Mode
         GlassCard(
             modifier = Modifier
@@ -93,16 +125,24 @@ fun SettingsScreen(
 
                 Spacer(Modifier.height(GlassTokens.SpaceL))
 
-                GlassSegmentedSelector(
-                    selectedMode = state.glassMode,
-                    onModeSelected = state::updateGlassMode
+                SegmentedSelector(
+                    options = GlassMode.entries,
+                    selected = state.glassMode,
+                    label = {
+                        when (it) {
+                            GlassMode.OFF -> "Off"
+                            GlassMode.FROSTED -> "Frosted"
+                            GlassMode.LIQUID -> "Liquid"
+                        }
+                    },
+                    onSelected = state::updateGlassMode
                 )
             }
         }
 
         // Notes
         Text(
-            text = "Catatan: Mode Liquid perlu Perangkat keras yg mendukung buat blur waktu nyata ygy.",
+            text = "Catatan: Liquid memakai blur + lensa real-time (blur Android 12+, lensa Android 13+). Di bawah itu tampil sebagai kaca biasa.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             modifier = Modifier.padding(horizontal = GlassTokens.ScreenGutter)
@@ -314,11 +354,12 @@ private fun ColoredLogText(
 }
 
 @Composable
-private fun GlassSegmentedSelector(
-    selectedMode: GlassMode,
-    onModeSelected: (GlassMode) -> Unit
+private fun <T> SegmentedSelector(
+    options: List<T>,
+    selected: T,
+    label: (T) -> String,
+    onSelected: (T) -> Unit
 ) {
-    val modes = GlassMode.entries
     val shape = RoundedCornerShape(12.dp)
 
     Row(
@@ -330,15 +371,15 @@ private fun GlassSegmentedSelector(
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        modes.forEach { mode ->
-            val isSelected = selectedMode == mode
+        options.forEach { option ->
+            val isSelected = selected == option
             val backgroundColor by animateColorAsState(
                 targetValue = if (isSelected) {
                     MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 } else {
                     Color.Transparent
                 },
-                label = "modeBackground"
+                label = "optionBackground"
             )
             val textColor by animateColorAsState(
                 targetValue = if (isSelected) {
@@ -346,7 +387,7 @@ private fun GlassSegmentedSelector(
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
-                label = "modeText"
+                label = "optionText"
             )
 
             Box(
@@ -355,15 +396,11 @@ private fun GlassSegmentedSelector(
                     .fillMaxHeight()
                     .clip(shape)
                     .background(backgroundColor)
-                    .clickable { onModeSelected(mode) },
+                    .clickable { onSelected(option) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = when (mode) {
-                        GlassMode.OFF -> "Off"
-                        GlassMode.FROSTED -> "Frosted"
-                        GlassMode.LIQUID -> "Liquid"
-                    },
+                    text = label(option),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     color = textColor,

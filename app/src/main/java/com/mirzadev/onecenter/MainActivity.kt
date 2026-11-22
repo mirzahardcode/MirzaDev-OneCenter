@@ -5,7 +5,6 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -34,7 +33,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.mirzadev.onecenter.state.AppState
 import com.mirzadev.onecenter.state.rememberAppState
 import com.mirzadev.onecenter.ui.design.AppBackground
-import com.mirzadev.onecenter.ui.design.GlassMode
 import com.mirzadev.onecenter.ui.design.LocalGlassMode
 import com.mirzadev.onecenter.ui.navigation.GlassNavigationBar
 import com.mirzadev.onecenter.ui.navigation.NavBarMetrics
@@ -44,7 +42,6 @@ import com.mirzadev.onecenter.ui.screens.HomeScreen
 import com.mirzadev.onecenter.ui.screens.PrivateScreen
 import com.mirzadev.onecenter.ui.screens.SettingsScreen
 import com.mirzadev.onecenter.ui.theme.MirzaDevCenterTheme
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -121,53 +118,52 @@ fun MirzaDevCenter(
         bottom = NavBarMetrics.contentClearance(bottomInset)
     )
 
-    AppBackground(modifier = modifier.fillMaxSize()) { hazeState ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = hazeState)
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                pageSpacing = 0.dp,
-                beyondViewportPageCount = 0
-            ) { page ->
-                when (page) {
-                    0 -> HomeScreen(
-                        state = appState.home,
-                        apkCount = appState.apks.apks.size,
-                        contentPadding = screenPadding,
-                        onApksClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-                        onPrivateClick = { scope.launch { pagerState.animateScrollToPage(2) } }
-                    )
-
-                    1 -> ApksScreen(
-                        state = appState.apks,
-                        contentPadding = screenPadding
-                    )
-
-                    2 -> PrivateScreen(
-                        state = appState.private,
-                        contentPadding = screenPadding
-                    )
-
-                    3 -> SettingsScreen(
-                        state = appState.settings,
-                        contentPadding = screenPadding
-                    )
-                }
-            }
-
+    AppBackground(
+        modifier = modifier.fillMaxSize(),
+        type = appState.settings.backgroundType,
+        overlay = { backdrop ->
             GlassNavigationBar(
                 selectedIndex = pagerState.currentPage,
                 items = navItems,
                 onSelect = { index ->
                     scope.launch { pagerState.animateScrollToPage(index) }
                 },
-                hazeState = hazeState,
+                backdrop = backdrop,
+                position = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
+        }
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            pageSpacing = 0.dp,
+            beyondViewportPageCount = 0
+        ) { page ->
+            when (page) {
+                0 -> HomeScreen(
+                    state = appState.home,
+                    apkCount = appState.apks.apks.size,
+                    contentPadding = screenPadding,
+                    onApksClick = { scope.launch { pagerState.animateScrollToPage(1) } },
+                    onPrivateClick = { scope.launch { pagerState.animateScrollToPage(2) } }
+                )
+
+                1 -> ApksScreen(
+                    state = appState.apks,
+                    contentPadding = screenPadding
+                )
+
+                2 -> PrivateScreen(
+                    state = appState.private,
+                    contentPadding = screenPadding
+                )
+
+                3 -> SettingsScreen(
+                    state = appState.settings,
+                    contentPadding = screenPadding
+                )
+            }
         }
     }
 }

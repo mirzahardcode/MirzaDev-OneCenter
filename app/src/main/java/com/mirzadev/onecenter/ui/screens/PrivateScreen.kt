@@ -255,7 +255,7 @@ private fun PrivateDocuments(
 
         item(key = "header") {
             ScreenHeader(
-                overline = "bocoran soal di update setiap jam 6-9 malam sebelum ujian",
+                overline = "Soal Tidak Disertai Gambar!",
                 title = "Bocoran",
                 subtitle = "Soal Ujian"
             )
