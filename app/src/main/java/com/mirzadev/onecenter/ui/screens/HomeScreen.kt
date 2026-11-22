@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Lock
@@ -227,8 +229,20 @@ fun HomeScreen(
                 AdminContact(
                     title = "Kontak Saya",
                     usernameOrAddress = "instagram: @mrrrzza",
-                    url = "",
+                    url = "https://instagram.com/mrrrzza",
                     icon = Icons.Default.SupportAgent,
+                ),
+                AdminContact(
+                    title = "Email Sumprot",
+                    usernameOrAddress = "mrzsupport@gmail.com",
+                    url = "mailto:mrzsupport@gmail.com",
+                    icon = Icons.Default.Email,
+                ),
+                AdminContact(
+                    title = "Telegram",
+                    usernameOrAddress = "t.me/mirzaadev",
+                    url = "https://t.me/mirzaadev",
+                    icon = Icons.Default.Forum,
                 ),
             ),
             key = { contact -> contact.title },
